@@ -1,0 +1,34 @@
+{
+    "name": "notify",
+    "description": "notificaciones de nuevas publicaciones",
+    "options": [
+        {
+            "type": 1,
+            "name": "subscribe",
+            "description": "activa notificaciones en este canal",
+            "options": [
+                {
+                    "type": 7,
+                    "name": "channel",
+                    "description": "canal de texto donde publicar",
+                    "required": true,
+                    "channel_types": [0]
+                }
+            ]
+        },
+        {
+            "type": 1,
+            "name": "unsubscribe",
+            "description": "desactiva notificaciones en este canal",
+            "options": [
+                {
+                    "type": 7,
+                    "name": "channel",
+                    "description": "canal de texto donde publicar",
+                    "required": true,
+                    "channel_types": [0]
+                }
+            ]
+        }
+    ]
+}
