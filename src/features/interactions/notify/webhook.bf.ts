@@ -1,6 +1,5 @@
 import { Server } from "http";
 import express from "express";
-import bodyParser from "body-parser";
 import { EmbedBuilder } from "@discordjs/builders";
 import { WEBHOOK_TOKEN as TOKEN } from "@/config";
 import { Bot, BotFeature } from "@/types";
@@ -47,7 +46,7 @@ const notify_subscribers = async (p: NotifyParams) => {
 }
 
 const app = express();
-app.use(bodyParser.json());
+app.use(express.json());
 
 
 let server: Server | null = null;
