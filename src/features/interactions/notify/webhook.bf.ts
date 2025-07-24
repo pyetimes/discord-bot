@@ -1,16 +1,16 @@
-import { join } from "path";
 import { Server } from "http";
 import express from "express";
 import bodyParser from "body-parser";
 import { EmbedBuilder } from "@discordjs/builders";
-import { OWNER, WEBHOOK_TOKEN as TOKEN } from "@/config";
-import { Bot } from "@/types";
-import { load_module_sync } from "@/loader";
-import { FeatureInteraction } from "..";
-import { ChannelType, TextChannel } from "discord.js";
-import { writeFileSync } from "fs";
+import { WEBHOOK_TOKEN as TOKEN } from "@/config";
+import { Bot, BotFeature } from "@/types";
+import { notify_channels, NotifyChannel } from "./misc";
 
 
+interface NotifyParams {
+    bot: Bot, title: string, url: string, description: string, 
+    image?: string, thumbnail?: string, author_name?: string, author_icon?: string,
+}
 
 function is_url(raw: string) {
     try {
@@ -21,24 +21,8 @@ function is_url(raw: string) {
     }
 }
 
-const path_subscribers = join(__dirname, "subscribers.json")
-
-const load_subscribers = () => {
-    return load_module_sync<string[]>(path_subscribers) ?? [];
-}
-
-const save_subscribers = (d: string[]) => {
-    writeFileSync(path_subscribers, JSON.stringify(d));
-}
-
-
-interface NotifyParams {
-    bot: Bot, title: string, url: string, description: string, 
-    image?: string, thumbnail?: string, author_name?: string, author_icon?: string,
-}
-
 const notify_subscribers = async (p: NotifyParams) => {
-    const subscribers = load_subscribers();
+    const subscribers = p.bot.database.session<NotifyChannel>(notify_channels).select('*');
 
     const embed = new EmbedBuilder()
         .setTitle(p.title)
@@ -53,15 +37,14 @@ const notify_subscribers = async (p: NotifyParams) => {
         embed.setAuthor({ name: p.author_name, iconURL: p.author_icon });
     }
 
-    for (const channelId of subscribers.values()) {
-        const channel = await p.bot.client.channels.fetch(channelId).catch(() => null);
+    for (const { channel_id } of (await subscribers).values()) {
+        const channel = await p.bot.client.channels.fetch(channel_id).catch(() => null);
 
         if (channel && channel.isSendable()) {
             await channel.send({ embeds: [embed] }).catch(console.error);
         }
     }
 }
-
 
 const app = express();
 app.use(bodyParser.json());
@@ -70,8 +53,8 @@ app.use(bodyParser.json());
 let server: Server | null = null;
 
 export default {
-    on_mount({ bot }) {
-        app.post("/webhook", (req, res) => {
+    async on_mount({ bot }) {
+        app.post("/article", (req, res) => {
             if (req.headers['x-webhook-token'] !== TOKEN) {
                 return res.status(401).send('Unauthorized');
             }
@@ -122,48 +105,7 @@ export default {
 
         server = app.listen(3000, () => console.log('Webhook escuchando en el puerto 3000'));
     },
-
-    on_unmount(p) {
+    async on_unmount() {
         server!.close();
     },
-
-    event: "interaction.notify",
-    async update({ interaction }) {
-        // Permisos
-        if (interaction.user.id !== OWNER) {
-            return await interaction.reply("No tienes permiso para configurar esto");
-        }
-
-        if (!interaction.isChatInputCommand()) return;
-        const { options } = interaction;
-
-        const subcommand = options.getSubcommand();
-        const channel = interaction.options.getChannel('channel', true);
-
-        if (channel.type !== ChannelType.GuildText || !(channel instanceof TextChannel)) {
-            return await interaction.reply({ content: "selecciona un canal de texto valido" });
-        }
-        const subscribers = load_subscribers();
-        
-        switch (subcommand) {
-            case "subscribe":
-                if (subscribers.includes(channel.id)) {
-                    return await interaction.reply({ content: `ya estoy notificando en ${channel}` });
-                }
-
-                subscribers.push(channel.id);
-                save_subscribers(subscribers);
-                
-                return await interaction.reply({ content: `notificaciones \`activadas\` en ${channel}.`, });
-            case "unsubscribe":
-                if (!subscribers.includes(channel.id)) {
-                    return await interaction.reply({ content: `no hay notificaciones \`activas\` en ${channel}` });
-                }
-
-                save_subscribers(subscribers.filter((c) => c !== channel.id));
-                return await interaction.reply({ content: `Notificaciones \`desactivadas\` en ${channel}.` });
-        }
-
-        return await interaction.reply({ content: 'Subcomando no reconocido.' });
-    }
-} as FeatureInteraction;
+} as BotFeature;

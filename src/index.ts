@@ -1,6 +1,7 @@
 import { join, basename } from "path";
 import { Client, GatewayIntentBits, Partials } from "discord.js"
-import { TOKEN } from "@/config"
+import Knex  from "knex";
+import { TOKEN, DATABASE_URL } from "@/config"
 import { EventEmitter } from "stream";
 import { get_files, load_module_sync } from "@/loader";
 import { Bot, BotFeature } from "@/types";
@@ -49,9 +50,15 @@ const bot: Bot = {
     path_features: join(__dirname, "features"),
     events: new EventEmitter(),
     features: new Map(),
+    database: {
+        async migrate(up) {
+            await up(bot.database.session);
+        },
+        session: Knex({ client: "pg", connection: DATABASE_URL }),
+    },
     async load_features(only_news: boolean = true, unmount: boolean = true) {
         for (const path_mod of get_files(bot.path_features)) {
-            if (!path_mod.endsWith(".js") && !path_mod.endsWith(".ts")) 
+            if (!path_mod.endsWith(".bf.js") && !path_mod.endsWith(".bf.ts")) 
                 continue;
             if (only_news && bot.features.has(path_mod)) {
                 if (unmount) {
@@ -139,6 +146,15 @@ const bot: Bot = {
     },
 
     async init() {
+        // ping database
+        try {
+            await bot.database.session.raw("SELECT 1");
+        } catch (error) {
+            await bot.destroy()
+            console.error(error)
+            return;
+        }
+
         for (const feature of bot.features.values()) {
             await bot.init_feature(feature);
         }
@@ -146,6 +162,7 @@ const bot: Bot = {
 
     async destroy() {
         try { await bot.unload_features(); } catch {};
+        try { await bot.database.session.destroy(); } catch {}
         await bot.client.destroy();
     },
     async run() {

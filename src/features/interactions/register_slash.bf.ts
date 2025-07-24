@@ -26,8 +26,6 @@ export default {
                     for (const m of mod) metadata.push(m);
                 else metadata.push(mod);
             }
-
-            console.log("Subiendo metadata de los 'Slash commands'");
     
             const current = await application.commands.fetch();
             const desired: ChatInputApplicationCommandData[] = metadata;                   
@@ -43,6 +41,7 @@ export default {
                 } else {
                     const sameDesc = existing.description === cmdData.description;
                     const sameOpts = JSON.stringify(existing.options) === JSON.stringify(cmdData.options || []);
+                    
                     if (!sameDesc || !sameOpts) {
                         await existing.edit(cmdData);
                         console.log(`→ Actualizado /${name}`);

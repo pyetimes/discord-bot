@@ -1,6 +1,7 @@
 import { Client } from "discord.js";
 import { EventEmitter } from "stream";
 import { FeatureStatus } from "./enums";
+import { Knex } from "knex";
 
 
 export interface BasePaylaod {
@@ -33,6 +34,10 @@ export interface Bot {
     readonly path_features: string;
     readonly events: EventEmitter;
     readonly features: Map<string, Feature>;
+    readonly database: { 
+        session: Knex;
+        migrate: (up: (db: Knex) => Promise<void>) => Promise<void>;
+    }
     init_feature: (f: Feature) => void | Promise<void>;
     close_feature: (f: Feature) => void | Promise<void>;
     load_features: () => void | Promise<void>;
