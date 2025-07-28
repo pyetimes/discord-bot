@@ -1,7 +1,7 @@
 import { BotFeature } from "@/types";
 
 export default {
-    on_mount({ bot }) {
+    onMount({ bot }) {
         bot.client.once("ready", () => {
             console.log(` > ${bot.client.user!.username}: ready!`);
         });

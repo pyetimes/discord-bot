@@ -11,11 +11,11 @@ if (interaction.isCommand()) {
 let handler: undefined | ((interaction: Interaction<CacheType>) => void) = undefined;
 
 export default {
-    on_mount({ bot }) {
+    onMount({ bot }) {
         handler = (interaction) => manager(bot, interaction);
         bot.client.on("interactionCreate", handler);
     },
-    on_unmount({ bot }) {
+    onUnmount({ bot }) {
         bot.client.removeListener("interactionCreate", handler!);
     },
 } as BotFeature;

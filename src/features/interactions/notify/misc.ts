@@ -1,5 +1,5 @@
-export const notify_channels = "notify_channels";
-export const notify_permissions = "notify_permissions";
+export const notifyChannels = "notify_channels";
+export const notifyPermissions = "notify_permissions";
 
 
 export enum Permissions {

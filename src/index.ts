@@ -3,7 +3,7 @@ import { Client, GatewayIntentBits, Partials } from "discord.js"
 import Knex  from "knex";
 import { TOKEN, DATABASE_URL } from "@/config"
 import { EventEmitter } from "stream";
-import { get_files, load_module_sync } from "@/loader";
+import { getFiles, loadModuleSync } from "@/loader";
 import { Bot, BotFeature } from "@/types";
 import { FeatureStatus } from "@/types/enums";
 
@@ -46,37 +46,38 @@ const client = new Client({
 
 const bot: Bot = {
     client, 
-    root_dir: __dirname,
-    path_features: join(__dirname, "features"),
+    rootdir: __dirname,
+    pathFeatures: join(__dirname, "features"),
     events: new EventEmitter(),
     features: new Map(),
-    database: {
+    db: {
         async migrate(up) {
-            await up(bot.database.session);
+            await up(bot.db.connection);
         },
-        session: Knex({ client: "pg", connection: DATABASE_URL }),
+        connection: Knex({ client: "pg", connection: DATABASE_URL }),
     },
-    async load_features(only_news: boolean = true, unmount: boolean = true) {
-        for (const path_mod of get_files(bot.path_features)) {
-            if (!path_mod.endsWith(".bf.js") && !path_mod.endsWith(".bf.ts")) 
+    async loadFeatures(onlyNews: boolean = true, unmount: boolean = true) {
+        for (const pathMod of getFiles(bot.pathFeatures)) {
+            if (!pathMod.endsWith(".bf.js") && !pathMod.endsWith(".bf.ts")) 
                 continue;
-            if (only_news && bot.features.has(path_mod)) {
+            if (onlyNews && bot.features.has(pathMod)) {
                 if (unmount) {
-                    const feature = bot.features.get(path_mod);
-                    await bot.close_feature(feature!);
+                    const feature = bot.features.get(pathMod);
+                    await bot.closeFeature(feature!);
                 }
                 continue;
             }
-            bot.features.set(path_mod, {
-                path: path_mod,
-                name: basename(path_mod),
+            bot.features.set(pathMod, {
+                pathAbsolute: pathMod,
+                pathRelative: pathMod.slice(bot.rootdir.length),
+                name: basename(pathMod),
                 status: FeatureStatus.Pending
             });
         }
     },
-    async init_feature(feature) {
+    async initFeature(feature) {
         try {
-            const mod = load_module_sync<BotFeature>(feature.path);
+            const mod = loadModuleSync<BotFeature>(feature.pathAbsolute);
             if (!mod) {
                 feature.status = FeatureStatus.Failed;
                 feature.error  = `no tiene definicion`;
@@ -85,8 +86,14 @@ const bot: Bot = {
 
             feature.mod = mod;
 
-            if (mod.on_mount) 
-                await feature.mod.on_mount!({ bot });
+            if (mod.onMount) {
+                try {
+                    await feature.mod.onMount!({ bot });
+                } catch (error) {
+                    feature = {...feature, status: FeatureStatus.Failed, error: String(error), mod: undefined, };
+                    return;
+                }
+            }
 
             if (mod.event) {
                 if (mod.update) {
@@ -95,51 +102,59 @@ const bot: Bot = {
                         try {
                             await updater(payload);
                         } catch (error) {
-                            if (feature.mod && feature.mod.on_unmount) {
-                                feature.mod.on_unmount(payload);
+                            if (feature.mod && feature.mod.onUnmount) {
+                                feature.mod.onUnmount(payload);
                             }
-                            feature.status = FeatureStatus.Failed;
-                            feature.mod = undefined;
-                            feature.error = String(error);
-                        }                     
+                            bot.events.removeListener(mod.event!, feature.mod!.update!);
+                            feature = {...feature, status: FeatureStatus.Failed, mod: undefined, error: String(error), };
+                        }
                     }
-
                     bot.events.on(mod.event, feature.mod.update);
                 } else {
-                    throw `Se registra en ${mod.event} sin definir que hacer`;
+                    feature = {...feature, 
+                        status: FeatureStatus.Failed, 
+                        mod: undefined,
+                        error: `Se registra en ${mod.event} sin definir que hacer`,
+                    };
+                    return;
                 }
             }
 
-            if (mod.on_unmount) {
-                const updater = mod.on_unmount;
-                feature.mod.on_unmount = async (payload) => {
+            if (mod.onUnmount) {
+                const updater = mod.onUnmount;
+                feature.mod.onUnmount = async (payload) => {
                     try {
                         await updater(payload);
                     } catch (error) {
-                        feature.status = FeatureStatus.Failed;
-                        feature.mod = undefined;
-                        feature.error = String(error);
+                        feature = {...feature, status: FeatureStatus.Failed, mod: undefined, error: String(error), };
                     }
                 }
             }
             feature.status = FeatureStatus.Loaded;
         } catch (error) {
-            feature.status = FeatureStatus.Failed;
-            feature.error = String(error);
-            feature.mod = undefined;
+            feature = {...feature, status: FeatureStatus.Failed, mod: undefined, error: String(error), };
         }
     },
-    async close_feature(feature) {
-        if (feature.mod && feature.mod.on_unmount) 
-            try { await feature.mod.on_unmount({ bot }); } 
-            catch (error) { feature.error = String(error); }
-        feature.status = FeatureStatus.Unloaded;
-        feature.mod = undefined;
+    async closeFeature(feature) {
+        if (feature.mod) {
+            const { mod } = feature;
+            if (mod.onUnmount) {
+                try { 
+                    await mod.onUnmount({ bot }); 
+                } catch (error) { 
+                    feature.error = String(error); 
+                }
+            }
+            if (mod.event) {
+                bot.events.removeListener(mod.event, mod.update!);
+            }
+        }
+        feature = {...feature, status: FeatureStatus.Unloaded, mod: undefined, };
     },
 
-    async unload_features() {
+    async unloadFeatures() {
         for (const feature of bot.features.values()) {
-            await bot.close_feature(feature);
+            await bot.closeFeature(feature);
         }
         bot.features.clear();
         bot.events.removeAllListeners();
@@ -148,25 +163,29 @@ const bot: Bot = {
     async init() {
         // ping database
         try {
-            await bot.database.session.raw("SELECT 1");
+            await bot.db.connection.raw("SELECT 1");
         } catch (error) {
-            await bot.destroy()
-            console.error(error)
+            await bot.destroy();
+            console.error(error);
             return;
         }
 
         for (const feature of bot.features.values()) {
-            await bot.init_feature(feature);
+            await bot.initFeature(feature);
         }
     },
 
     async destroy() {
-        try { await bot.unload_features(); } catch {};
-        try { await bot.database.session.destroy(); } catch {}
+        try { await bot.unloadFeatures(); } catch (error) {
+            console.log(error);
+        };
+        try { await bot.db.connection.destroy(); } catch (error) {
+            console.log(error);
+        }
         await bot.client.destroy();
     },
     async run() {
-        await bot.load_features();
+        await bot.loadFeatures();
         await bot.init();
         await bot.client.login(TOKEN).catch(async (error) => {
             console.log("NO se pudo conectar con discord. ");
@@ -179,9 +198,9 @@ const bot: Bot = {
 
 process.on("SIGINT", bot.destroy);
 process.on("SIGTERM", bot.destroy);
-process.on("uncaughtException", async (o_error) => {
+process.on("uncaughtException", async (error) => {
     await bot.destroy();
-    console.error(o_error);
+    console.error(error);
 });
 
 bot.run();

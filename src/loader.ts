@@ -2,7 +2,7 @@ import { readdirSync } from "fs";
 import { extname, join } from "path";
 
 
-export function get_files(directory: string): string[] {
+export function getFiles(directory: string): string[] {
     let files: string[] = [];
     
     const items = readdirSync(directory, { withFileTypes: true, recursive: true });
@@ -14,7 +14,7 @@ export function get_files(directory: string): string[] {
 }
 
 
-export function load_module_sync<T>(fullFilePath: string): T | undefined {
+export function loadModuleSync<T>(fullFilePath: string): T | undefined {
     if (fullFilePath.endsWith(".d.ts")) 
         return undefined; 
     

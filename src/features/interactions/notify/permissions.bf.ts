@@ -1,7 +1,7 @@
 import { Bot } from "@/types";
 import { FeatureInteraction } from "..";
 import { ChatInputCommandInteraction } from "discord.js";
-import { notify_permissions, NotifyPermissions } from "./misc";
+import { notifyPermissions, NotifyPermissions } from "./misc";
 import { OWNER } from "@/config";
 
 
@@ -12,19 +12,19 @@ const add: P = async (bot, interaction) => {
     const user = options.getUser("user", true);
     const perm = options.getInteger("perm", true);
 
-    const user_permissions = await bot.database.session<NotifyPermissions>(notify_permissions)
+    const userPermissions = await bot.db.connection<NotifyPermissions>(notifyPermissions)
             .where({ user_id: user.id, guild_id: interaction.guildId! }).first();
 
-    if (!user_permissions) {
-        await bot.database.session(notify_permissions).insert({
+    if (!userPermissions) {
+        await bot.db.connection(notifyPermissions).insert({
             user_id: user.id,
             guild_id: interaction.guildId,
             bitmask: perm
         });
     } else {
-        await bot.database.session(notify_permissions)
+        await bot.db.connection(notifyPermissions)
             .where({ user_id: user.id, guild_id: interaction.guildId })
-            .update({ bitmask: user_permissions.bitmask | perm });
+            .update({ bitmask: userPermissions.bitmask | perm });
     }
 
     await interaction.reply("permisos del usuario actualizado");
@@ -35,18 +35,13 @@ const remove: P = async (bot, interaction) => {
     const user = options.getUser("user", true);
     const perm = options.getInteger("perm", true);
 
-    const user_permissions = await bot.database.session<NotifyPermissions>(notify_permissions)
+    const userPermissions = await bot.db.connection<NotifyPermissions>(notifyPermissions)
             .where({ user_id: user.id }).first();
 
-    if (user_permissions) {
-        await bot.database.session(notify_permissions)
-            .where({
-                user_id: user.id,
-                guild_id: interaction.guildId
-            })
-            .update({
-                bitmask: user_permissions.bitmask & ~perm
-            });
+    if (userPermissions) {
+        await bot.db.connection(notifyPermissions)
+            .where({ user_id: user.id, guild_id: interaction.guildId })
+            .update({ bitmask: userPermissions.bitmask & ~perm });
     }
     
     await interaction.reply("permisos del usuario actualizado");

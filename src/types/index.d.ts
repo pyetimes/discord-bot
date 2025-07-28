@@ -12,8 +12,8 @@ export interface BotFeature<
     E extends keyof EventsMap = string,
     EventsMap extends Record<PropertyKey, BasePaylaod> = Record<E, BasePaylaod>,
 > {
-    on_mount?: (p: BasePaylaod) => void | Promise<void>;
-    on_unmount?: (p: BasePaylaod) => void | Promise<void>;
+    onMount?: (p: BasePaylaod) => void | Promise<void>;
+    onUnmount?: (p: BasePaylaod) => void | Promise<void>;
 
     event?: E;
     update?: (payload: EventsMap[E]) => void | Promise<void>;
@@ -21,27 +21,30 @@ export interface BotFeature<
 
 export interface Feature {
     name: string;
-    path: string;
+    pathAbsolute: string;
+    pathRelative: string;
     event?: string;
     mod?: BotFeature<any>;
     status: FeatureStatus; 
     error?: string;
 }
 
+export type Migrate = (db: Knex) => Promise<void>
+
 export interface Bot {
     readonly client: Client;
-    readonly root_dir: string;
-    readonly path_features: string;
+    readonly rootdir: string;
+    readonly pathFeatures: string;
     readonly events: EventEmitter;
     readonly features: Map<string, Feature>;
-    readonly database: { 
-        session: Knex;
-        migrate: (up: (db: Knex) => Promise<void>) => Promise<void>;
+    readonly db: { 
+        connection: Knex;
+        migrate: (up: Migrate) => Promise<void>;
     }
-    init_feature: (f: Feature) => void | Promise<void>;
-    close_feature: (f: Feature) => void | Promise<void>;
-    load_features: () => void | Promise<void>;
-    unload_features: () => void | Promise<void>;
+    initFeature: (f: Feature) => void | Promise<void>;
+    closeFeature: (f: Feature) => void | Promise<void>;
+    loadFeatures: () => void | Promise<void>;
+    unloadFeatures: () => void | Promise<void>;
     init: () => void | Promise<void>;
     destroy: () => void | Promise<void>;
     run: () => void | Promise<void>;

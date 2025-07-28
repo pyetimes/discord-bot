@@ -1,12 +1,12 @@
 import { join } from "path";
 import { ChatInputApplicationCommandData } from "discord.js";
 import { BotFeature } from "@/types";
-import { load_module_sync, get_files } from "@/loader";
+import { loadModuleSync, getFiles } from "@/loader";
 
 type Metadata = ChatInputApplicationCommandData | ChatInputApplicationCommandData[]; 
 
 export default {
-    async on_mount({ bot }) {
+    async onMount({ bot }) {
         bot.client.once("ready", async () => {
             const { application } = bot.client;
             if (!application) {
@@ -14,13 +14,13 @@ export default {
                 return;
             };
     
-            const path_files = get_files(join(bot.path_features, "interactions"));
+            const pathFiles = getFiles(join(bot.pathFeatures, "interactions"));
             const metadata = [];
             
-            for (const path_file of path_files) {
-                if (!path_file.endsWith("metadata.json")) 
+            for (const pathFile of pathFiles) {
+                if (!pathFile.endsWith("metadata.json")) 
                     continue;
-                const mod = load_module_sync<Metadata>(path_file);        
+                const mod = loadModuleSync<Metadata>(pathFile);        
                 if (!mod) continue;
                 if (Array.isArray(mod)) 
                     for (const m of mod) metadata.push(m);

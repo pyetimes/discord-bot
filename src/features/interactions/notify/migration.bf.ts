@@ -2,8 +2,8 @@ import { BotFeature } from "@/types";
 
 
 export default {
-    async on_mount({ bot }) {
-        await bot.database.migrate(async (db) => {
+    async onMount({ bot }) {
+        await bot.db.migrate(async (db) => {
             if (!(await db.schema.hasTable("notify_channels"))) {
                 await db.schema.createTable("notify_channels", table => {
                     table.increments("id").primary();
