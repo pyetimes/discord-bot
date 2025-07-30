@@ -38,9 +38,9 @@ const notifySubscribers = async (p: NotifyParams) => {
         .setColor([0, 153, 255])
         .setTimestamp();
 
-    if (p.authorName) {
+    if (p.authorName) 
         embed.setAuthor({ name: p.authorName, iconURL: p.authorIcon });
-    }
+    
 
     for (const { channel_id } of (await subscribers).values()) {
         const channel = await p.bot.client.channels.fetch(channel_id).catch(() => null);

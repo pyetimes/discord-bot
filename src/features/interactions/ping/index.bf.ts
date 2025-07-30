@@ -1,4 +1,4 @@
-import { FeatureInteraction } from "../index";
+import { FeatureInteraction } from "../types";
 
 
 export default {

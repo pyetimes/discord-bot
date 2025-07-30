@@ -1,5 +1,5 @@
 import { join, basename } from "path";
-import { Client, GatewayIntentBits, Partials } from "discord.js"
+import { Client, GatewayIntentBits, Partials } from "discord.js";
 import Knex  from "knex";
 import { TOKEN, DATABASE_URL } from "@/config"
 import { EventEmitter } from "stream";
@@ -56,17 +56,10 @@ const bot: Bot = {
         },
         connection: Knex({ client: "pg", connection: DATABASE_URL }),
     },
-    async loadFeatures(onlyNews: boolean = true, unmount: boolean = true) {
+    async loadFeatures() {
         for (const pathMod of getFiles(bot.pathFeatures)) {
             if (!pathMod.endsWith(".bf.js") && !pathMod.endsWith(".bf.ts")) 
                 continue;
-            if (onlyNews && bot.features.has(pathMod)) {
-                if (unmount) {
-                    const feature = bot.features.get(pathMod);
-                    await bot.closeFeature(feature!);
-                }
-                continue;
-            }
             bot.features.set(pathMod, {
                 pathAbsolute: pathMod,
                 pathRelative: pathMod.slice(bot.rootdir.length),
@@ -76,6 +69,9 @@ const bot: Bot = {
         }
     },
     async initFeature(feature) {
+        if (feature.status === FeatureStatus.Loaded) 
+            return;
+
         try {
             const mod = loadModuleSync<BotFeature>(feature.pathAbsolute);
             if (!mod) {
@@ -103,7 +99,7 @@ const bot: Bot = {
                             await updater(payload);
                         } catch (error) {
                             if (feature.mod && feature.mod.onUnmount) {
-                                feature.mod.onUnmount(payload);
+                                await feature.mod.onUnmount(payload);
                             }
                             bot.events.removeListener(mod.event!, feature.mod!.update!);
                             feature = {...feature, status: FeatureStatus.Failed, mod: undefined, error: String(error), };
@@ -138,15 +134,15 @@ const bot: Bot = {
     async closeFeature(feature) {
         if (feature.mod) {
             const { mod } = feature;
+            if (mod.event) {
+                bot.events.removeListener(mod.event, mod.update!);
+            }
             if (mod.onUnmount) {
                 try { 
                     await mod.onUnmount({ bot }); 
                 } catch (error) { 
                     feature.error = String(error); 
                 }
-            }
-            if (mod.event) {
-                bot.events.removeListener(mod.event, mod.update!);
             }
         }
         feature = {...feature, status: FeatureStatus.Unloaded, mod: undefined, };

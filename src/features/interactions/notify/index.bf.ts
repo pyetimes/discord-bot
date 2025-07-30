@@ -1,11 +1,11 @@
 import { ChannelType, ChatInputCommandInteraction, Interaction, TextChannel } from "discord.js";
-import { FeatureInteraction } from "..";
+import { FeatureInteraction } from "../types";
 import { Bot } from "@/types";
 import { OWNER } from "@/config";
 import { notifyChannels, notifyPermissions, NotifyPermissions, Permissions } from "./misc";
 
 
-type P = (bot: Bot, interaction: ChatInputCommandInteraction) => Promise<any> 
+type P = (bot: Bot, interaction: ChatInputCommandInteraction) => Promise<any>;
 
 
 const add: P = async (bot, interaction) => {
@@ -16,9 +16,9 @@ const add: P = async (bot, interaction) => {
     if (channel.type !== ChannelType.GuildText || !(channel instanceof TextChannel)) 
         return await interaction.reply({ content: "selecciona un canal de texto valido" });
 
-    if ((await bot.db.connection(notifyChannels).where({ guild_id: guildId, channel_id: channel.id })).length > 0) {
-        return await interaction.reply({ content: `ya estoy notificando en ${channel}`})
-    }
+    if ((await bot.db.connection(notifyChannels).where({ guild_id: guildId, channel_id: channel.id })).length > 0) 
+        return await interaction.reply({ content: `ya estoy notificando en ${channel}`});
+    
 
     await bot.db.connection(notifyChannels).insert({
         guild_id: guildId,
@@ -26,6 +26,7 @@ const add: P = async (bot, interaction) => {
         channel_name: channel.name,
         configured_by: user.id
     });
+
     await interaction.reply({ content: `notificaciones \`activadas\` en ${channel}.` });
 }
 
@@ -37,16 +38,14 @@ const remove: P = async (bot, interaction) => {
         .where({ guild_id: guildId, channel_id: channel.id })
         .del();
     
-    return await interaction.reply({ 
-        content: deleted ? `Notificaciones \`desactivadas\` en ${channel}.` : `no hay notificaciones \`activas\` en ${channel}`
-    });
+    return await interaction.reply(deleted ? `Notificaciones \`desactivadas\` en ${channel}.` : `no hay notificaciones \`activas\` en ${channel}`);
 }
 
 const list: P = async (bot, interaction) => {
     const { guildId } = interaction;
-    if (!guildId) {
+    if (!guildId) 
         return await interaction.reply("Comando solo disponible desde un servidor");
-    }
+    
     const rows = await bot.db.connection(notifyChannels)
         .where({ guild_id: guildId });
 
@@ -59,6 +58,7 @@ const list: P = async (bot, interaction) => {
 
 const hasPermission = async (bot: Bot, interaction: Interaction, perm: Permissions): Promise<boolean> => {
     const { user, guild } = interaction;
+
     if (user.id === guild?.ownerId || user.id === OWNER) 
         return true;
 
@@ -74,7 +74,7 @@ const hasPermission = async (bot: Bot, interaction: Interaction, perm: Permissio
 export default {
     event: "interaction.notify",
     async update({ bot, interaction }) {
-        // Permisos;
+
         if (!interaction.isChatInputCommand()) return;
         
         switch (interaction.options.getSubcommand()) {

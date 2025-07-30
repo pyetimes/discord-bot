@@ -1,95 +1,43 @@
-[
-    {
-        "name": "notify",
-        "description": "Notificaciones de nuevas publicaciones",
-        "options": [
-            {
-                "type": 1,
-                "name": "add",
-                "description": "Activa las notificaciones de nuevas publicaciones en este canal",
-                "options": [
-                    {
-                        "type": 7,
-                        "name": "channel",
-                        "description": "Canal de texto donde se publicarán las notificaciones",
-                        "required": true,
-                        "channel_types": [0]
-                    }
-                ]
-            },
-            {
-                "type": 1,
-                "name": "remove",
-                "description": "Desactiva las notificaciones de nuevas publicaciones en este canal",
-                "options": [
-                    {
-                        "type": 7,
-                        "name": "channel",
-                        "description": "Canal de texto donde dejarán de publicarse notificaciones",
-                        "required": true,
-                        "channel_types": [0]
-                    }
-                ]
-            },
-            {
-                "type": 1,
-                "name": "list",
-                "description": "Muestra todos los canales configurados para recibir notificaciones"
-            }
-        ]
-    },
-    {
-        "name": "nperms",
-        "description": "Gestión de permisos para el comando notify",
-        "options": [
-            {
-                "type": 1,
-                "name": "add",
-                "description": "Otorga a un usuario permiso para gestionar notificaciones",
-                "options": [
-                    {
-                        "type": 6,
-                        "name": "user",
-                        "description": "Usuario al que se le dará permiso",
-                        "required": true
-                    },
-                    {
-                        "type": 4,
-                        "name": "perm",
-                        "description": "Permiso a asignar",
-                        "required": true,
-                        "choices": [
-                            { "name": "ADD", "value": 1 },
-                            { "name": "REMOVE", "value": 2 },
-                            { "name": "LIST", "value": 4 }
-                        ]
-                    }
-                ]
-            },
-            {
-                "type": 1,
-                "name": "remove",
-                "description": "Revoca a un usuario el permiso para gestionar notificaciones",
-                "options": [
-                    {
-                        "type": 6,
-                        "name": "user",
-                        "description": "Usuario al que se le quitará el permiso",
-                        "required": true
-                    },
-                    {
-                        "type": 4,
-                        "name": "perm",
-                        "description": "Permiso a asignar",
-                        "required": true,
-                        "choices": [
-                            { "name": "ADD", "value": 1 },
-                            { "name": "REMOVE", "value": 2 },
-                            { "name": "LIST", "value": 4 }
-                        ]
-                    }
-                ]
-            }
-        ]
-    }
-]
+{
+    "name": "notify",
+    "description": "Notificaciones de nuevas publicaciones",
+    "options": [
+        {
+            "type": 1,
+            "name": "add",
+            "description": "Activa las notificaciones de nuevas publicaciones en este canal",
+            "options": [
+                {
+                    "type": 7,
+                    "name": "channel",
+                    "description": "Canal de texto donde se publicarán las notificaciones",
+                    "required": true,
+                    "channel_types": [
+                        0
+                    ]
+                }
+            ]
+        },
+        {
+            "type": 1,
+            "name": "remove",
+            "description": "Desactiva las notificaciones de nuevas publicaciones en este canal",
+            "options": [
+                {
+                    "type": 7,
+                    "name": "channel",
+                    "description": "Canal de texto donde dejarán de publicarse notificaciones",
+                    "required": true,
+                    "channel_types": [
+                        0
+                    ]
+                }
+            ]
+        },
+        {
+            "type": 1,
+            "name": "list",
+            "description": "Muestra todos los canales configurados para recibir notificaciones"
+        }
+    ]
+}

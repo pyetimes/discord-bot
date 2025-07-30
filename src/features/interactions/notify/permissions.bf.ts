@@ -1,11 +1,11 @@
 import { Bot } from "@/types";
-import { FeatureInteraction } from "..";
+import { FeatureInteraction } from "../types";
 import { ChatInputCommandInteraction } from "discord.js";
 import { notifyPermissions, NotifyPermissions } from "./misc";
 import { OWNER } from "@/config";
 
 
-type P = (bot: Bot, interaction: ChatInputCommandInteraction) => Promise<any> 
+type P = (bot: Bot, interaction: ChatInputCommandInteraction) => Promise<any>;
 
 const add: P = async (bot, interaction) => {
     const { options } = interaction;
@@ -55,13 +55,13 @@ const remove: P = async (bot, interaction) => {
 export default {
     event: "interaction.nperms",
     async update({ bot, interaction }) {
-        if (!interaction.isChatInputCommand()) return;
+        if (!interaction.isChatInputCommand()) 
+            return;
 
         const { options, guild, user } = interaction;
 
-        if (!guild) {
+        if (!guild) 
             return await interaction.reply("Solo disponible en servidores");
-        }
 
         switch (options.getSubcommand()) {
             case "add":
