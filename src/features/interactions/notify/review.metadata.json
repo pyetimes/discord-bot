@@ -1,6 +1,6 @@
 {
-    "name": "notify",
-    "description": "Notificaciones de nuevas publicaciones",
+    "name": "notify-review",
+    "description": "Notificaciones de versiones en revisión (no publicadas aún)",
     "options": [
         {
             "type": 1,
@@ -33,7 +33,7 @@
         {
             "type": 1,
             "name": "list",
-            "description": "Muestra todos los canales configurados para recibir notificaciones"
+            "description": "Lista los canales configurados para recibir notificaciones de revisión"
         }
     ]
 }

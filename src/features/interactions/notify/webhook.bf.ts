@@ -3,7 +3,7 @@ import express from "express";
 import { EmbedBuilder } from "@discordjs/builders";
 import { WEBHOOK_TOKEN as TOKEN } from "@/config";
 import { Bot, BotFeature } from "@/types";
-import { notifyChannels, NotifyChannel } from "./misc";
+import { notifyChannels, NotifyChannel, Phase } from "./misc";
 
 
 interface NotifyParams {
@@ -15,6 +15,7 @@ interface NotifyParams {
     thumbnail?: string; 
     authorName?: string; 
     authorIcon?: string;
+    published: boolean;
 }
 
 function isURL(raw: string) {
@@ -27,7 +28,10 @@ function isURL(raw: string) {
 }
 
 const notifySubscribers = async (p: NotifyParams) => {
-    const subscribers = p.bot.db.connection<NotifyChannel>(notifyChannels).select('*');
+    const subscribers = p.bot.db
+        .connection<NotifyChannel>(notifyChannels)
+        .where({ phase: p.published ? Phase.PUBLISH : Phase.REVIEW })
+        .select('*');
 
     const embed = new EmbedBuilder()
         .setTitle(p.title)
@@ -70,6 +74,7 @@ export default {
             const thumbnail = req.body?.thumbnail;
             const authorName = req.body?.author_name;
             const authorIcon = req.body?.author_icon;
+            const published = req.body?.published ?? false;
 
 
             if (typeof title !== "string") 
@@ -93,11 +98,14 @@ export default {
             if (authorName !== undefined && (typeof authorName !== "string")) 
                 return res.status(400).send({ "msg": 'Se debe pasar una "author_name" valido (string)' });
 
-            notifySubscribers({bot, title, url, description, image, thumbnail, authorIcon, authorName})
+            if (typeof published !== "boolean") 
+                return res.status(400).send({ "msg": '"published" debe ser un "boolean"' });
+
+            notifySubscribers({bot, title, url, description, image, thumbnail, authorIcon, authorName, published})
                 .then(() => res.status(200).send({msg: 'notificados'}))
                 .catch(err => {
                     console.error(err);
-                    res.status(500).send({ msg: 'Error interno' });
+                    res.status(500).send({ msg: 'Error interno', error: String(err) });
                 });
         });
 
