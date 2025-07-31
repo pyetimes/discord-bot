@@ -66,25 +66,6 @@ Subcomandos:
 
 ---
 
-### /nperms
-Gestión de permisos para el comando `notify`
-
-Subcomandos:
-- **add**  
-  Otorga a un usuario permiso para gestionar notificaciones  
-  Uso:  
-  ```  
-  /nperms add user:@user perm:ADD|REMOVE|LIST  
-  ```
-- **remove**  
-  Revoca a un usuario el permiso para gestionar notificaciones  
-  Uso:  
-  ```  
-  /nperms remove user:@user perm:ADD|REMOVE|LIST  
-  ```
-
----
-
 ### /notify-review
 Notificaciones de versiones en revisión (no publicadas aún)
 

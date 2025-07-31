@@ -1,4 +1,3 @@
-import { OWNER } from "@/config";
 import { FeatureInteraction } from "../../types";
 import { CommandWithServers, DB_TABLE_COMMAND_SERVERS, DB_TABLE_COMMANDS, getAllCommands, ServerId } from "../misc";
 import { ChatInputCommandInteraction, InteractionResponse } from "discord.js";
@@ -125,9 +124,6 @@ export default {
     async update({ bot, interaction }) {
         if (!interaction.isChatInputCommand()) 
             return;
-        
-        if (interaction.user.id !== OWNER) 
-            return interaction.reply("no tienes permiso para usar este comando");
 
         const status = await interaction.reply("*procesando...*");
         const all = await getAllCommands(bot.db.connection);

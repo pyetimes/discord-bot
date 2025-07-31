@@ -1,5 +1,5 @@
 import { BotFeature } from "@/types";
-import { notifyChannels, notifyPermissions, Phase } from "./misc";
+import { notifyChannels, Phase } from "./misc";
 
 
 export default {
@@ -23,15 +23,6 @@ export default {
 
                     await db(notifyChannels).update({ phase: Phase.REVIEW });
                 }
-            }
-
-            if (!(await db.schema.hasTable(notifyPermissions))) {
-                await db.schema.createTable(notifyPermissions, table => {
-                    table.increments("id").primary();
-                    table.string("user_id").notNullable().index();
-                    table.string("guild_id").notNullable().index();
-                    table.integer("bitmask").notNullable();
-                });
             }
         });
     },

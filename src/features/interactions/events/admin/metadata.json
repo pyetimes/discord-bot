@@ -1,6 +1,7 @@
 {
     "name": "commands",
     "description": "Ver y configurar el despliegue de los slash commands",
+    "default_member_permissions": "0x8",
     "options": [
         {
             "type": 1,

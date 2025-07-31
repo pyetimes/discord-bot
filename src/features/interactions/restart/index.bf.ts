@@ -1,12 +1,9 @@
-import { OWNER } from "@/config";
 import { FeatureInteraction } from "../types";
 
 
 export default {
     event: "interaction.restart",
     async update({ bot, interaction }) {
-        if (interaction.user.id !== OWNER) 
-            return interaction.reply("no tienes permiso para usar este comando");
         
         const status = await interaction.reply("*Reiniciando...*");
 

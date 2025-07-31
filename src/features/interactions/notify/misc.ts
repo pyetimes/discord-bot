@@ -3,25 +3,11 @@ import { Bot } from "@/types";
 import { ChannelType, ChatInputCommandInteraction, Interaction, TextChannel } from "discord.js";
 
 export const notifyChannels = "notify_channels";
-export const notifyPermissions = "notify_permissions";
 
-
-export enum Permissions {
-    ADD = 1 << 0,
-    REMOVE = 1 << 1,
-    LIST = 1 << 2
-}
 
 export enum Phase {
     REVIEW = "review",
     PUBLISH = "publish",
-}
-
-export interface NotifyPermissions {
-    id: number;
-    user_id: string;
-    guild_id: string;
-    bitmask: number;
 }
 
 export interface NotifyChannel {
@@ -32,22 +18,6 @@ export interface NotifyChannel {
     channel_name: string;
     configured_by: string;
     configured_at: Date;
-}
-
-
-export const hasPermission = async (bot: Bot, interaction: Interaction, perm: Permissions): Promise<boolean> => {
-    const { user, guild } = interaction;
-
-    if (user.id === guild?.ownerId || user.id === OWNER) 
-        return true;
-
-    const userPermissions = await bot.db.connection<NotifyPermissions>(notifyPermissions)
-            .where({ user_id: user.id }).first();
-            
-    if (!userPermissions) 
-        return false;
-
-    return (userPermissions.bitmask & perm) === perm;
 }
 
 type P = (bot: Bot, interaction: ChatInputCommandInteraction, phase: Phase) => Promise<any>;
