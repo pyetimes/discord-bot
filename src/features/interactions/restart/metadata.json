@@ -1,5 +1,0 @@
-{
-    "name": "restart",
-    "description": "reinicia el bot",
-    "default_member_permissions": "0x8"
-}

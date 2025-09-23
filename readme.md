@@ -23,28 +23,21 @@ cp .env.example .env
     "thumbnail": "url or null",
     "author_name": "string or null",
     "author_icon": "url or null",
-    "published": false
+    "published": false,
+    "body": "string"
 }
 ```
 
-
 ## Commands
-### /restart
-Reinicia el bot
-
----
-
 ### /ping
-
 Retorna "pong!"
 
 --- 
 
-
 ### /notify
 Notificaciones de nuevas publicaciones
 
-Subcomandos:
+#### Subcomandos:
 - **add**  
   Activa las notificaciones en un canal de texto  
   Uso:
@@ -69,7 +62,7 @@ Subcomandos:
 ### /notify-review
 Notificaciones de versiones en revisión (no publicadas aún)
 
-Subcomandos:
+#### Subcomandos:
 - **add**  
   Activa las notificaciones en un canal de texto  
   Uso:  
@@ -92,7 +85,7 @@ Subcomandos:
 ### /commands
 Ver y configurar el despliegue de los slash commands
 
-Subcomandos:
+#### Subcomandos:
 - **list**  
   Lista todos los comandos y su alcance (opcionalmente de uno en especifico)  
   Uso:  
