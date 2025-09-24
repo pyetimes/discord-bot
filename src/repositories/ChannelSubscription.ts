@@ -25,19 +25,7 @@ export class ChannelSubscriptionRepository implements IChannelSubscription {
         return await db.channelSubscription.findFirst({ where: { id } });
     }
 
-    async list(): Promise<ChannelSubscription[]> {
-        return await db.channelSubscription.findMany();
-    }
-
-    async listByTopic(topic: string): Promise<ChannelSubscription[]> {
-        return await db.channelSubscription.findMany({ where: { topic, } });
-    }
-
-    async listByUser(id: string): Promise<ChannelSubscription[]> {
-        return await db.channelSubscription.findMany({ where: { createdBy: id } });
-    }
-
-    async listByGuild(id: string): Promise<ChannelSubscription[]> {
-        return await db.channelSubscription.findMany({ where: { guildId: id } });
+    async list(filterBy?: { topic?: string, userId?: string, guildId?: string }): Promise<ChannelSubscription[]> {
+        return await db.channelSubscription.findMany({ where: filterBy });
     }
 }

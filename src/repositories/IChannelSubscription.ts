@@ -8,8 +8,5 @@ export interface IChannelSubscription {
     getById(id: string): Promise<ChannelSubscription | null>;    
     getByChannel(id: string, topic?: string): Promise<ChannelSubscription[]>;
     
-    list(): Promise<ChannelSubscription[]>;
-    listByTopic(topic: string): Promise<ChannelSubscription[]>;
-    listByUser(id: string): Promise<ChannelSubscription[]>;
-    listByGuild(id: string): Promise<ChannelSubscription[]>;
+    list(filterBy?: { topic?: string, userId?: string, guildId?: string }): Promise<ChannelSubscription[]>;
 }
