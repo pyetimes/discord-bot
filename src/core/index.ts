@@ -20,10 +20,11 @@ export class CoreClient<Ready extends boolean = boolean> extends Client<Ready> {
 
     async notify(options: string | MessagePayload | MessageCreateOptions, channelsId: string[]): Promise<void> {
         for (const id of channelsId) {
-            const channel = await this.channels.fetch(id);
-            if (channel && channel.isSendable()) {
-                await this.safecall(async () => await channel.send(options));
-            }
+            await this.safecall(async () => {
+                const channel = await this.channels.fetch(id);
+                if (channel && channel.isSendable()) 
+                    await channel.send(options);
+            });
         }
     }
 

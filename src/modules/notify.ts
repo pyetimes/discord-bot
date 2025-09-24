@@ -47,7 +47,7 @@ const aux = async (interaction: ChatInputCommandInteraction<CacheType>, topic: s
                 return interaction.reply("I only notify in guilds");
 
             const repo = new ChannelSubscriptionRepository();
-            const list = (await repo.listByGuild(guildId))
+            const list = (await repo.list({ guildId, topic }))
                 .map((a) => `• <#${a.channelId}> configured by <@${a.createdBy}>`);
             
             return interaction.reply(list.length > 0
@@ -157,7 +157,7 @@ export default {
                 return res.status(400).json({ message: 'Invalid request payload', errors });
 
             const repo = new ChannelSubscriptionRepository();
-            const p = repo.listByTopic(published ? TOPIC_P : TOPIC_R);
+            const p = repo.list({ topic: published ? TOPIC_P : TOPIC_R});
             
             const embed = new EmbedBuilder()
                 .setTitle(title)

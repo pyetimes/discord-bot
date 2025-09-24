@@ -1,7 +1,7 @@
 import { join } from "path";
 import { readdirSync } from "fs";
 import { GatewayIntentBits, Partials } from "discord.js";
-import { CoreClient, Module } from "@core";
+import { CoreClient, LogLevel, Module } from "@core";
 import { DS_TOKEN, NODE_ENV } from "@/config";
 import { loadModuleSync } from "@/utils/loader";
 import { closeModules, initModules } from "./utils";
@@ -48,6 +48,7 @@ if (!DS_TOKEN) {
 }
 
 const destroyCore = async () => {
+    await client.log({ level: LogLevel.INFO, message: "turning off", timestamp: (new Date()).toISOString() });
     await closeModules(client);
     await client.destroy();
 }
@@ -55,8 +56,8 @@ const destroyCore = async () => {
 process.on("SIGINT", destroyCore);
 process.on("SIGTERM", destroyCore);
 process.on("uncaughtException", async (error) => {
+    await client.log({ level: LogLevel.FATAL, message: `${error.name}: ${error.message}`, timestamp: (new Date()).toISOString() });
     await destroyCore();
-    console.error(error);
 });
 
 ;(async () => {
