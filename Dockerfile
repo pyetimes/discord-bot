@@ -1,26 +1,30 @@
 FROM node:22.17 AS builder
-
 WORKDIR /app
 
-COPY package*.json ./
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-RUN npm install
+COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma
+
+RUN pnpm install
+RUN npx prisma generate
 
 COPY . .
+RUN pnpm run build
+RUN pnpm prune --prod
 
-RUN npm run build
-
-
-FROM node:22.17
-
+FROM node:22.17 AS runner
 WORKDIR /app
 
-COPY package*.json ./
+# COPY package.json pnpm-lock.yaml ./
+# RUN pnpm install --prod
 
-RUN npm install --only=production
-
-COPY --from=builder /app/build ./build
+COPY --from=builder /app/dist ./build
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
 
 ENV NODE_ENV=production
+# ENV DATABASE_URL=postgres://user:password@host:port/name
 
-CMD [ "node", "build/index.js" ]
+ENTRYPOINT ["sh", "-c"]
+CMD ["npx prisma migrate deploy && node build/src/index.js"]

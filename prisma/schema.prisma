@@ -1,0 +1,60 @@
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+model Command {
+    id          String               @id                @default(uuid())
+    name        String               @unique
+    hash        String
+    createdAt   DateTime             @map("created_at") @default(now())
+    deployments CommandDeployment[]
+
+    @@map("command")
+}
+
+model Guild {
+    id          String @id
+    name        String
+    nameAcronym String
+    deployments CommandDeployment[]
+
+    @@map("guild")
+}
+
+enum DeploymentScope {
+    GLOBAL
+    SERVER
+}
+
+model CommandDeployment {
+    id             String           @id                   @default(uuid())
+    commandId      String           @map("command_id")
+    scope          DeploymentScope  @default(GLOBAL)
+    guildId        String?          @map("guild_id")
+    configuredAt   DateTime         @map("configured_at") @default(now())
+
+    command        Command  @relation(fields: [commandId], references: [id], onDelete: Cascade)
+    guild          Guild?   @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+    @@unique([commandId, guildId])
+    @@index([guildId])
+    @@map("command_deployment")
+}
+
+model ChannelSubscription {
+    id               String      @id @default(uuid())
+    topic            String
+    guildId          String      @map("guild_id")
+    channelId        String      @map("channel_id")
+
+    createdBy        String      @map("created_by")
+    createdAt        DateTime    @map("created_at") @default(now())
+
+    @@unique([topic, channelId])
+    @@map("channel_subscription")
+}
