@@ -4,6 +4,7 @@ import { ChannelSubscriptionRepository } from "@/repositories/ChannelSubscriptio
 import { LogLevel, Module } from "@core";
 import { CacheType, ChannelType, ChatInputCommandInteraction, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder, TextChannel } from "discord.js";
 import { WH_TOKEN as TOKEN } from "@/config";
+import { RoleSubscription } from "@/repositories/RoleRepository";
 
 
 const TOPIC_P = "T_NOTIFICATION_OF_PUBLICATION";
@@ -15,6 +16,9 @@ const aux = async (interaction: ChatInputCommandInteraction<CacheType>, topic: s
             const { options, guildId, user } = interaction;
             const channel = options.getChannel("channel", true);
             
+            if (guildId === null)
+                return interaction.reply("I only notify in guilds");
+
             if (!(channel instanceof TextChannel))
                 return interaction.reply("select a valid text channel");
 
@@ -22,9 +26,6 @@ const aux = async (interaction: ChatInputCommandInteraction<CacheType>, topic: s
             
             if ((await repo.getByChannel(channel.id, topic)).length !== 0) 
                 return interaction.reply(`I'm already notifying on ${channel}`);
-
-            if (guildId === null)
-                return interaction.reply("I only notify in guilds");
 
             await repo.create(guildId, channel.id, topic, user.id);
 
@@ -55,6 +56,38 @@ const aux = async (interaction: ChatInputCommandInteraction<CacheType>, topic: s
                 : "no channels configured"
             );
         }
+        case "add-role": {
+            const { guildId } = interaction;
+            const role = interaction.options.getRole("role", true);
+
+            if (guildId === null)
+                return interaction.reply("I only notify in guilds");
+            
+            const repo = new RoleSubscription();
+
+            if (await repo.getByRoleId(role.id))
+                return interaction.reply("I'm already notifying this role");
+            
+            await repo.create(topic, guildId, role.id, interaction.user.id);
+
+            return interaction.reply(`I will now notify this role \`${role.name}\``);
+        }
+        case "remove-role": {
+            const { guildId } = interaction;
+            const role = interaction.options.getRole("role", true);
+
+            if (guildId === null)
+                return interaction.reply("I only notify in guilds");
+
+            const repo = new RoleSubscription();
+
+            const r = await repo.getByRoleId(role.id);
+
+            if (r !== null)
+                await repo.delete(r.id);
+            
+            return interaction.reply(`Notifications to the \`${role.name}\` role have been disabled.`);
+        }
     }
 }
 
@@ -84,6 +117,24 @@ const data = (name: string, description: string) => new SlashCommandBuilder()
     .addSubcommand(s => s
         .setName("list")
         .setDescription("Displays all channels configured to receive notifications")
+    )
+    .addSubcommand(s => s
+        .setName("add-role")
+        .setDescription("Add a role to the notification")
+        .addRoleOption(o => o
+            .setName("role")
+            .setDescription("Select the role to receive notifications")
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(s => s
+        .setName("remove-role")
+        .setDescription("Remove a role from the notification")
+        .addRoleOption(o => o
+            .setName("role")
+            .setDescription("Select the role to remove from receiving notifications")
+            .setRequired(true)
+        )
     )
 
 function isURL(raw: string) {
@@ -156,9 +207,13 @@ export default {
             if (errors.length > 0)
                 return res.status(400).json({ message: 'Invalid request payload', errors });
 
-            const repo = new ChannelSubscriptionRepository();
-            const p = repo.list({ topic: published ? TOPIC_P : TOPIC_R});
-            
+            const repoCSR = new ChannelSubscriptionRepository();
+            const repoRS = new RoleSubscription();
+
+            const topic = published ? TOPIC_P : TOPIC_R;
+
+            const cs = repoCSR.list({ topic });
+
             const embed = new EmbedBuilder()
                 .setTitle(title)
                 .setURL(url)
@@ -169,9 +224,24 @@ export default {
                 .setColor([0, 153, 255])
                 .setTimestamp();
 
-            const a = (await p).map(c => c.channelId);
+            const map = (await cs).reduce((pv, cv) => {
+                const a = pv.get(cv.guildId) ?? [];
+                a.push(cv.channelId);
+                pv.set(cv.guildId, a);
+                return pv;
+            }, new Map<string, string[]>());
 
-            await client.notify({ content: content || undefined, embeds: [embed] }, a);
+            for (const [ guildId, channelsId ] of map) {
+                const rs = await repoRS.list({ topic, guildId });
+                
+                const rContent = (rs.length > 0 ? `${rs.reduce((pv, cv) => pv + `<@&${cv.roleId}> `, "")}` : '')
+                    + (content ? `\n${content}` : '');
+
+                await client.notify({
+                    embeds: [embed],
+                    content: rContent ? rContent : undefined,
+                }, channelsId);
+            }
             res.status(200).send({ message: "Ok" });
         });
 
