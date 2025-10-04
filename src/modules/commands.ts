@@ -276,6 +276,7 @@ export default {
         once: true,
         execute: async (client) => {
             for (const a of await sync(client)) {
+                console.dir(a, { depth: null, colors: true });
                 await applyAction(client, a);
             }
         }
@@ -444,6 +445,13 @@ async function sync(client: CoreClient<true>) {
                 const dbCmd = dbMap.get(guildId)!.cmdByName.get(cmdName)!;
                 if (coCmd.hash !== dbCmd.hash) {
                     updateHash.set(cmdName, { id: dbCmd.id, hash: coCmd.hash });
+                    console.log(`ID de discord: ${idByName.get(cmdName)}`)
+                    actions.push({
+                        type: "Ds_UPDATE",
+                        data: coCmd.data,
+                        id: idByName.get(cmdName)!,
+                        guildId: guildId !== "global" ? guildId : undefined,
+                    });
                     actions.push({
                         type: "De_UPDATE",
                         commandId: dbCmd.id,
@@ -537,6 +545,8 @@ async function applyAction(client: CoreClient<true>, action: Action) {
         case "Co_UPDATE":
         {
             const repo = new CommandRepository();
+            console.log("ANTERIOR")
+            console.dir(await repo.getById(action.id), { depth: null, colors: true });
             await repo.updateHash(action.id, action.hash);
             break;
         }
