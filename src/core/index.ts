@@ -18,12 +18,12 @@ export class CoreClient<Ready extends boolean = boolean> extends Client<Ready> {
         await Promise.all(Array.from(this.logHandlers).map(h => { try { h(entry); } catch {} }));
     }
 
-    async notify(options: string | MessagePayload | MessageCreateOptions, channelsId: string[]): Promise<void> {
+    async *notify(options: string | MessagePayload | MessageCreateOptions, channelsId: string[]) {
         for (const id of channelsId) {
-            await this.safecall(async () => {
+            yield await this.safecall(async () => {
                 const channel = await this.channels.fetch(id);
                 if (channel && channel.isSendable()) 
-                    await channel.send(options);
+                    return await channel.send(options);
             });
         }
     }

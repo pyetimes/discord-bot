@@ -237,10 +237,10 @@ export default {
                 const rContent = (rs.length > 0 ? `${rs.reduce((pv, cv) => pv + `<@&${cv.roleId}> `, "")}` : '')
                     + (content ? `\n${content}` : '');
 
-                await client.notify({
-                    embeds: [embed],
-                    content: rContent ? rContent : undefined,
-                }, channelsId);
+                for await (const msg of client.notify({ embeds: [embed], content: rContent ? rContent : undefined }, channelsId)) {
+                    if (msg) 
+                        msg.react('⭐')
+                }
             }
             res.status(200).send({ message: "Ok" });
         });
